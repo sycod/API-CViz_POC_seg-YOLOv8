@@ -1,0 +1,22 @@
+data:
+  local_path: "data"
+  img_dir: "Images"
+  annot_dir: "Annotation"
+  img_db_uri: "img_db.csv"
+  train_dir: "train"
+  test_dir: "test"
+  checkpoint_dir : "model_chkpts"
+  app_dir: "app"
+
+log:
+  log_dir: "logs"
+
+models:
+  classes_3: ["pug", "Siberian_husky", "borzoi"]
+  classes_10: ["Leonberg", "basenji", "malamute", "papillon", "chow", "dhole", "dingo", "Cardigan", "Brabancon_griffon", "boxer"]
+
+app_data:
+  local_path: "app_data"
+  model: "EfficientNetB0_app.keras"
+  # breeds are not in the same order as original classes
+  breeds: ['Brabancon_griffon', 'Cardigan', 'Leonberg', 'basenji', 'boxer', 'chow', 'dhole', 'dingo', 'malamute', 'papillon']

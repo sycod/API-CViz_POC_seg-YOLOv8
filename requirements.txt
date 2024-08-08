@@ -1,0 +1,20 @@
+black                   # PEP8 formatter
+black[jupyter]          # PEP8 formatter for Jupyter NB
+click                   # CLI great interface
+dill                    # Pickle substitute for big data sets
+keras                   # DL library
+mlflow                  # ML tracker and more
+notebook                # all Jupyter notebook needs
+plotly                  # interactive plots (with JS)
+pylint                  # great linter
+pytest                  # unit tests
+pytest-cov              # unit tests, cover a specific function
+python-dotenv           # Environment variables
+pyyaml                  # YAML support
+seaborn                 # plots
+scikit-learn            # ML must-have
+scikit-image            # scikit learn images
+streamlit               # cool Python GUI
+tensorboard             # DL monitoring
+tensorflow              # DL, CPU only
+tensorflow[and-cuda]    # DL with GPU
