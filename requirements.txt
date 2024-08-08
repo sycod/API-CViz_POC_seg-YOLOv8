@@ -3,7 +3,6 @@ black[jupyter]          # PEP8 formatter for Jupyter NB
 click                   # CLI great interface
 dill                    # Pickle substitute for big data sets
 keras                   # DL library
-mlflow                  # ML tracker and more
 notebook                # all Jupyter notebook needs
 plotly                  # interactive plots (with JS)
 pylint                  # great linter
