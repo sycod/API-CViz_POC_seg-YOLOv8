@@ -1,7 +1,7 @@
 data:
   local_path: "data"
-  img_dir: "Images"
-  annot_dir: "Annotation"
+  img_dir: "images_raw"
+  annot_dir: "annotations_raw"
   img_db_uri: "img_db.csv"
   train_dir: "train"
   val_dir: "valid"

@@ -2,7 +2,7 @@
 
 import os
 import requests
-import tarfile
+import zipfile
 import pandas as pd
 import re
 
@@ -15,13 +15,13 @@ def get_tar_and_extract(url, output_directory) -> None:
     os.makedirs(output_directory, exist_ok=True)
 
     # temporary archive
-    temp_file = os.path.join(output_directory, "temp.tar")
+    temp_file = os.path.join(output_directory, "temp.zip")
     with open(temp_file, "wb") as file:
         file.write(response.content)
 
     # extract archive
-    with tarfile.open(temp_file, "r") as tar:
-        tar.extractall(path=output_directory)
+    with zipfile.ZipFile.open(temp_file, "r") as zip_ref:
+        zip_ref.extractall(output_directory)
 
     # remove archive
     os.remove(temp_file)
@@ -65,7 +65,7 @@ def create_img_db(img_dir, annot_dir, output_uri) -> pd.DataFrame:
                 os.path.join(annot_dir, breed, annot), "r", encoding="utf-8"
             ) as f:
                 annot_content = f.read()
-
+            
             # loop over features & store regex result in a list
             for tag in annot_tags:
                 pattern = f"<{tag}>(.*?)</{tag}>"
