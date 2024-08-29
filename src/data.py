@@ -2,6 +2,7 @@
 
 import os
 import tarfile
+import shutil
 import pandas as pd
 import re
 
@@ -124,6 +125,31 @@ def create_annot(x, o_dir, set_type, o_format="txt") -> None:
     # save file
     with open(os.path.join(output_dir, filename), 'w') as f:
         f.write(f"{class_e} {xmin} {ymin} {xmax} {ymax}")
+
+
+def copy_images(x, o_dir, set_type) -> None:
+    """Copy images to appropriate folder
+
+    x: Pandas Series with necessary columns (encoded class & bbox coordinates)
+    o_dir: string, output directory
+    set_type: string, data set type ("train", "val" or "test")
+    """
+
+    # root labels folder
+    output_root_dir = os.path.join(o_dir, "images")
+    os.makedirs(output_root_dir, exist_ok=True)
+    # set folder
+    output_dir = os.path.join(output_root_dir, set_type)
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # images URI
+    img_name = x["ID"] + ".jpg"
+    src_uri = x["img_uri"]
+    dest_uri = os.path.join(output_dir, img_name)
+
+    # copy image
+    if not os.path.exists(dest_uri):
+        shutil.copy2(src_uri, dest_uri)
 
 
 if __name__ == "__main__":
