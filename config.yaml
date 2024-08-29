@@ -1,11 +1,9 @@
 data:
+  raw_data_uri: "raw_data.tar"
   local_path: "data"
   img_dir: "images_raw"
   annot_dir: "annotations_raw"
   img_db_uri: "img_db.csv"
-  train_dir: "train"
-  val_dir: "valid"
-  test_dir: "test"
   checkpoint_dir : "model_chkpts"
   app_dir: "app"
 
