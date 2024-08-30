@@ -18,3 +18,4 @@ streamlit               # cool Python GUI
 tensorboard             # DL monitoring
 tensorflow              # DL, CPU only
 tensorflow[and-cuda]    # DL with GPU
+ultralytics             # CViz specialist

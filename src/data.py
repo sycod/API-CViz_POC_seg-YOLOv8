@@ -118,13 +118,26 @@ def create_annot(x, o_dir, set_type, o_format="txt") -> None:
     filename = x["ID"] + "." + o_format
     class_e = x["class_enc"]
     xmin = x["bb_xmin"]
-    ymin = x["bb_ymin"]
     xmax = x["bb_xmax"]
+    ymin = x["bb_ymin"]
     ymax = x["bb_ymax"]
+    img_w = x["width"]
+    img_h = x["height"]
 
+    # convert to model format
+    w = xmax - xmin
+    h = ymax - ymin    
+    x_center = xmin + (w / 2)
+    y_center = ymin + (h / 2)
+
+    w_rel = w / img_w
+    h_rel = h / img_h
+    x_c_rel = x_center / img_w
+    y_c_rel = y_center / img_h
+    
     # save file
     with open(os.path.join(output_dir, filename), 'w') as f:
-        f.write(f"{class_e} {xmin} {ymin} {xmax} {ymax}")
+        f.write(f"{class_e} {x_c_rel} {y_c_rel} {w_rel} {h_rel}")
 
 
 def copy_images(x, o_dir, set_type) -> None:
