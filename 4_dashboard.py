@@ -4,11 +4,8 @@ import os
 import yaml
 import logging
 import streamlit as st
-import numpy as np
+from ultralytics import YOLO
 from PIL import Image
-from tensorflow.keras.models import load_model
-from tensorflow.keras.preprocessing import image
-from tensorflow.keras.applications.efficientnet import preprocess_input
 
 
 # CONFIG
@@ -16,8 +13,10 @@ from tensorflow.keras.applications.efficientnet import preprocess_input
 with open("config.yaml", "r") as f:
     cfg = yaml.safe_load(f)
 APP_PATH = cfg["app_data"]["local_path"]
-MODEL = os.path.join(APP_PATH, cfg["app_data"]["model"])
+MODEL_URI = os.path.join(APP_PATH, cfg["app_data"]["model"])
 BREEDS = cfg["app_data"]["breeds"]
+CONFID = cfg["app_data"]["confidence"]
+MAX_DETECT = cfg["app_data"]["max_detections"]
 # logging configuration (see all outputs, even DEBUG or INFO)
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -26,7 +25,7 @@ logger.setLevel(logging.INFO)
 @st.cache_resource
 def load_model_cached():
     """Load and cache prediction model"""
-    return load_model(MODEL)
+    return YOLO(MODEL_URI)
 
 
 def launch_api():
@@ -47,15 +46,15 @@ def launch_api():
     if "breed" not in st.session_state:
         st.session_state.breed = None
 
-    st.write("# Send dog image to detect breed among 10")
+    st.write("# Send dogs image to detect breeds")
     st.write(
         f"""
                 > Model is trained upon the **Stanford Dogs Dataset**.  
-                > It is able to detect **10 dogs breeds**: *{(', ').join(BREEDS)}*  
-                > 
-                > ➡️ For better results, use **1 dog per image** -- only **JPG and PNG** files allowed -- max size: 200MB"""
+                > ➡️ able to detect **10 dogs breeds**  
+                > ➡️ for **up to 6 simultaneous dogs**: *{(', ').join(BREEDS)}*  
+                > ⚠️ Only **JPG and PNG** files allowed -- max size: 200MB"""
     )
-    st.write("#### 👇 **Upload your dog image** to predict its breed 👇")
+    st.write("#### 👇 **Upload your image** to predict dog(s) breed(s) 👇")
 
     # user input
     st.session_state.image = st.file_uploader(
@@ -69,25 +68,36 @@ def launch_api():
     st.markdown("""---""")
 
     if st.session_state.image is not None:
-        # preprocess image
         img = Image.open(st.session_state.image)
-        img = img.resize((224, 224))
-        img_array = image.img_to_array(img)
-        img_array = np.expand_dims(img_array, axis=0)
-        img_array = preprocess_input(img_array)
-        # predict dog breed
-        predictions = st.session_state.model.predict(img_array)
-        predicted_class = np.argmax(predictions[0])
-        st.session_state.breed = BREEDS[predicted_class]
-        confidence = predictions[0][predicted_class]
-        txt = f"Predicted breed: {st.session_state.breed} ({confidence :.2%})"
-
-        st.write(f"#### What a beautiful :blue[{st.session_state.breed}]!")
-        st.image(
-            st.session_state.image,
-            caption=txt,
-            use_column_width=True,
+        pred = st.session_state.model.predict(
+            img,
+            save=False,
+            conf=CONFID,
+            max_det=MAX_DETECT,
         )
+
+        if len(pred[0].boxes) == 0:
+            st.image(
+                img,
+                caption='Picture with no dog breed detected 😕',
+                use_column_width=True
+            )
+        else:
+            # get predicted image
+            pred_plot = pred[0].plot()[:, :, ::-1]
+            
+            # create image caption
+            caption = f"Picture of {len(pred[0])} dog(s) with following breeds: "
+            for i, p in enumerate(pred[0]):
+                # get prediction data
+                conf = f"{p.boxes.conf[0].item() :0.0%}"
+                cls = BREEDS[int(p.boxes.data[0][-1])]
+                # create caption
+                caption += f"{cls} ({conf})"
+                # add separator
+                if i != len(pred[0]) - 1:
+                    caption += ", "
+            st.image(pred_plot, caption=caption, use_column_width=True)
 
 
 if __name__ == "__main__":
