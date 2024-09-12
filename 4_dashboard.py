@@ -85,6 +85,12 @@ def launch_api():
                 > ➡️ for **up to 6 simultaneous dogs**: *{(', ').join(BREEDS)}*  
                 > ⚠️ Only **JPG and PNG** files allowed -- max size: 200MB"""
     )
+
+    # 🚧 EDA
+    raw_breed = st.selectbox("Choose your favorite dog breed", BREEDS)
+
+    st.markdown("""---""")
+
     st.write("#### 👇 **Upload your image** to predict dog(s) breed(s) 👇")
 
     # user input
