@@ -7,15 +7,21 @@ data:
   checkpoint_dir : "model_chkpts"
   app_dir: "app"
 
-log:
-  log_dir: "logs"
-
 models:
   classes: ["Leonberg", "basenji", "malamute", "papillon", "chow", "dhole", "dingo", "Cardigan", "Brabancon_griffon", "boxer"]
 
 app_data:
   local_path: "app_data"
   model: "yolov8_m_best.pt"
-  breeds: ["Leonberg", "basenji", "malamute", "papillon", "chow", "dhole", "dingo", "Cardigan", "Brabancon_griffon", "boxer"]
   confidence: 0.1
   max_detections: 6
+
+# from previous experiment
+previous:
+  model: "EfficientNetB0_app.keras"
+  # breeds are not in the same order as original classes
+  classes_10: ['Brabancon_griffon', 'Cardigan', 'Leonberg', 'basenji', 'boxer', 'chow', 'dhole', 'dingo', 'malamute', 'papillon']
+  train_dir: "train"
+  test_dir: "test"
+  log_dir: "runs"
+  checkpoint_dir : "model_chkpts"

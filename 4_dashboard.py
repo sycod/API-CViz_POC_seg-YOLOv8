@@ -14,7 +14,7 @@ with open("config.yaml", "r") as f:
     cfg = yaml.safe_load(f)
 APP_PATH = cfg["app_data"]["local_path"]
 MODEL_URI = os.path.join(APP_PATH, cfg["app_data"]["model"])
-BREEDS = cfg["app_data"]["breeds"]
+BREEDS = cfg["model"]["classes"]
 CONFID = cfg["app_data"]["confidence"]
 MAX_DETECT = cfg["app_data"]["max_detections"]
 # logging configuration (see all outputs, even DEBUG or INFO)

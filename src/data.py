@@ -165,5 +165,22 @@ def copy_images(x, o_dir, set_type) -> None:
         shutil.copy2(src_uri, dest_uri)
 
 
+def copy_images_prev(X, dir) -> None:
+    i = 0
+    for src_uri in X:
+        img_name = src_uri.split("/")[-1]
+        img_class = src_uri.split("/")[-2].split("-")[-1]
+        dest_uri = os.path.join(dir, img_class, img_name)
+        # create folder if needed
+        if not os.path.exists(os.path.join(dir, img_class)):
+            os.makedirs(os.path.join(dir, img_class))
+        # copy image
+        if not os.path.exists(dest_uri):
+            shutil.copy2(src_uri, dest_uri)
+        # count processed images
+        i += 1
+    print(f"{i} images processed")
+
+
 if __name__ == "__main__":
     help()
