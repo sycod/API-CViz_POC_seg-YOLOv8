@@ -3,23 +3,51 @@
 import os
 import yaml
 import logging
-import streamlit as st
+import numpy as np
+import pandas as pd
 from ultralytics import YOLO
 from PIL import Image
+import streamlit as st
+from src.app_utils import display_labeled_img
+from src.data import extract_data, create_img_db
 
 
 # CONFIG
 # local config
 with open("config.yaml", "r") as f:
     cfg = yaml.safe_load(f)
+RAW_DATA_URI = cfg["data"]["raw_data_uri"]
+DATA_DIR = cfg["data"]["local_path"]
+IMG_DIR = os.path.join(DATA_DIR, cfg["data"]["img_dir"])
+ANNOT_DIR = os.path.join(DATA_DIR, cfg["data"]["annot_dir"])
+IMG_DB_URI = os.path.join(DATA_DIR, cfg["data"]["img_db_uri"])
+BREEDS = cfg["model"]["classes"]
 APP_PATH = cfg["app_data"]["local_path"]
 MODEL_URI = os.path.join(APP_PATH, cfg["app_data"]["model"])
-BREEDS = cfg["model"]["classes"]
-CONFID = cfg["app_data"]["confidence"]
+CONFID = cfg["app_data"]["min_confidence"]
 MAX_DETECT = cfg["app_data"]["max_detections"]
+
 # logging configuration (see all outputs, even DEBUG or INFO)
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+
+# LOAD DATA & CREATE DB
+if os.path.exists(IMG_DB_URI):
+    img_df = pd.read_csv(IMG_DB_URI, index_col=0)
+else:
+    # extract data
+    logging.info("⚙️ Extracting data...")
+    extract_data(RAW_DATA_URI, DATA_DIR)
+    
+    # create database
+    logging.info("⚙️ Creating database...")
+    img_df = create_img_db(IMG_DIR, ANNOT_DIR, IMG_DB_URI)
+
+
+@st.cache_resource
+def load_img_db_cached():
+    """Load and cache image database"""
+    return img_df
 
 
 @st.cache_resource
@@ -38,6 +66,9 @@ def launch_api():
     )
 
     # create session states
+    if "img_db" not in st.session_state:
+        # load and cache raw images database
+        st.session_state.img_db = load_img_db_cached()
     if "model" not in st.session_state:
         # load and cache model
         st.session_state.model = load_model_cached()

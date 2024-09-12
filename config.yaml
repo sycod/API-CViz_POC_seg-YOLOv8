@@ -7,13 +7,13 @@ data:
   checkpoint_dir : "model_chkpts"
   app_dir: "app"
 
-models:
+model:
   classes: ["Leonberg", "basenji", "malamute", "papillon", "chow", "dhole", "dingo", "Cardigan", "Brabancon_griffon", "boxer"]
 
 app_data:
   local_path: "app_data"
   model: "yolov8_m_best.pt"
-  confidence: 0.1
+  min_confidence: 0.1
   max_detections: 6
 
 # from previous experiment
