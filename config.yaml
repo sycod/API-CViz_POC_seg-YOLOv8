@@ -12,6 +12,7 @@ model:
 
 app_data:
   local_path: "app_data"
+  train_outputs_dir: "train_outputs"
   model: "yolov8_m_best.pt"
   min_confidence: 0.1
   max_detections: 6

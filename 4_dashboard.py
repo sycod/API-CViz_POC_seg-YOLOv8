@@ -27,6 +27,7 @@ ANNOT_DIR = os.path.join(DATA_DIR, cfg["data"]["annot_dir"])
 IMG_DB_URI = os.path.join(DATA_DIR, cfg["data"]["img_db_uri"])
 BREEDS = cfg["model"]["classes"]
 APP_PATH = cfg["app_data"]["local_path"]
+TRAIN_OUTPUTS_DIR = os.path.join(APP_PATH, cfg["app_data"]["train_outputs_dir"])
 MODEL_URI = os.path.join(APP_PATH, cfg["app_data"]["model"])
 CONFID = cfg["app_data"]["min_confidence"]
 MAX_DETECT = cfg["app_data"]["max_detections"]
@@ -149,13 +150,39 @@ def raw_breed_from_list():
     display_img_from_raw_breed()
 
 
+def prev_da_img():
+    if st.session_state.da_img_index > 0:
+        st.session_state.da_img_index -= 1
+
+
+def next_da_img():
+    if st.session_state.da_img_index < 2:
+        st.session_state.da_img_index += 1
+
+
+def val_img():
+    if st.session_state.val_img == "labels":
+        st.session_state.val_img = "pred"
+    else:
+        st.session_state.val_img = "labels"
+
+
+def update_confid():
+    st.session_state.confidence = st.session_state.confidence_slider
+
+
+def update_max_detect():
+    st.session_state.max_detections = st.session_state.max_detections_slider
+
+
 # APP
 # *****************************************************************************
 def launch_api():
     """Launch API server"""
     # GUI
+    # *************************************************************************
     st.set_page_config(
-        page_title="Which breed is that dog?",
+        page_title="Which breeds are these dogs?",
         page_icon="app_favicon.ico",
         layout="centered",
     )
@@ -180,8 +207,16 @@ def launch_api():
         st.session_state.raw_image = None
     if "raw_image_caption" not in st.session_state:
         st.session_state.raw_image_caption = None
+    if "da_img_index" not in st.session_state:
+        st.session_state.da_img_index = 0
+    if "val_img" not in st.session_state:
+        st.session_state.val_img = "labels"
     
     # for inference
+    if "confidence" not in st.session_state:
+        st.session_state.confidence = CONFID
+    if "max_detections" not in st.session_state:
+        st.session_state.max_detections = MAX_DETECT
     if "image" not in st.session_state:
         st.session_state.image = None
     if "breed" not in st.session_state:
@@ -190,6 +225,7 @@ def launch_api():
     st.write("# Dogs breeds detector")
 
     # EDA
+    # *************************************************************************
     st.write("## Original data")
     st.write("Model is trained upon the **[Stanford Dogs Dataset](http://vision.stanford.edu/aditya86/ImageNetDogs/)**, with a **selection of 10 dogs breeds** :")
     st.write(f"*{(', ').join(breeds_read)}*")
@@ -232,17 +268,57 @@ def launch_api():
     st.markdown("""---""")
 
     # TRAINING
+    # *************************************************************************
+    st.write("## Training the model")
+
+    # data augmentation
     st.write("## Training the model")
     st.write("Model was trained using **data augmentation on the training set**:")
-    # 🚧 train images slider
+    # train images carrousel
+    col1, col2, col3, col4 = st.columns(4)
+    with col2:
+        if st.session_state.da_img_index <= 0:
+            st.button("⬅️", disabled=True)
+        else:
+            st.button("⬅️", disabled=False, on_click=prev_da_img)
+    with col3:
+        if st.session_state.da_img_index >= 2:
+            st.button("➡️", disabled=True)
+        else:
+            st.button("➡️", disabled=False, on_click=next_da_img)
+    st.image(
+        os.path.join(
+            TRAIN_OUTPUTS_DIR,
+            "train_batch" + str(st.session_state.da_img_index) + ".jpg"
+        ),
+        caption="Augmented training images representing transformed raw images",
+    )
 
-    st.write("And its weights were adjusted upon their **performance on the validation set**")
-    st.write("For **class predictions** and **object detection**:")
-    # 🚧 2 val images with prediction selector (or carrousel or slideshow)
+    # validation set predictions
+    st.write("And its weights were adjusted upon their **performance on the validation set**, for **class predictions** and **object detection**:")
+    col1, col2, col3, col4 = st.columns(4)
+    with col2:
+        if st.session_state.val_img == "labels":
+            st.button("Classification", disabled=True)
+        else:
+            st.button("Classification", disabled=False, on_click=val_img)
+    with col3:
+        if st.session_state.val_img == "pred":
+            st.button("Detection", disabled=True)
+        else:
+            st.button("Detection", disabled=False, on_click=val_img)
+    st.image(
+        os.path.join(
+            TRAIN_OUTPUTS_DIR,
+            "val_batch0_" + st.session_state.val_img + ".jpg"
+        ),
+        caption="Model predictions on validation set during training, showing dogs with breeds and eventual bounding box with confidence",
+    )
 
     st.markdown("""---""")
 
     # INFERENCE
+    # *************************************************************************
     st.write("## Test it")
     st.write("Guidelines:")
     st.write(
@@ -258,18 +334,39 @@ def launch_api():
         # "👇 Upload your dog image 👇",
         accept_multiple_files=False,
         type=["png", "jpg", "jpeg"],
-        # on_change=on_upload,    # 🚧
     )
 
-    st.markdown("""---""")
-
     if st.session_state.image is not None:
+        # adjust confidence and maximum detections
+        col1, col2 = st.columns(2)
+        with col1:
+            confidence_slider = st.slider(
+                "Confidence",
+                value=st.session_state.confidence,
+                min_value=0.05,
+                max_value=0.95,
+                step=0.05,
+                key="confidence_slider",
+                on_change=update_confid,
+            )
+        with col2:
+            max_detections_slider = st.slider(
+                "Maximum detections",
+                value=st.session_state.max_detections,
+                min_value=1,
+                max_value=20,
+                step=1,
+                key="max_detections_slider",
+                on_change=update_max_detect,
+            )
+
+        # display image
         img = Image.open(st.session_state.image)
         pred = st.session_state.model.predict(
             img,
             save=False,
-            conf=CONFID,
-            max_det=MAX_DETECT,
+            conf=st.session_state.confidence,
+            max_det=st.session_state.max_detections,
         )
 
         if len(pred[0].boxes) == 0:
