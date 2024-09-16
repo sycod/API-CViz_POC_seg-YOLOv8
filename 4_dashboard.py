@@ -11,6 +11,9 @@ import matplotlib.patches as patches
 import seaborn as sns
 from PIL import Image
 import streamlit as st
+from tensorflow.keras.models import load_model
+from tensorflow.keras.preprocessing import image
+from tensorflow.keras.applications.efficientnet import preprocess_input
 from ultralytics import YOLO
 from src.data import extract_data, create_img_db
 
@@ -25,9 +28,11 @@ DATA_DIR = cfg["data"]["local_path"]
 IMG_DIR = os.path.join(DATA_DIR, cfg["data"]["img_dir"])
 ANNOT_DIR = os.path.join(DATA_DIR, cfg["data"]["annot_dir"])
 IMG_DB_URI = os.path.join(DATA_DIR, cfg["data"]["img_db_uri"])
+BREEDS_EFFNET = cfg["previous"]["classes_10"]
 BREEDS = cfg["model"]["classes"]
 APP_PATH = cfg["app_data"]["local_path"]
 TRAIN_OUTPUTS_DIR = os.path.join(APP_PATH, cfg["app_data"]["train_outputs_dir"])
+MODEL_URI_EFFNET = os.path.join(APP_PATH, cfg["previous"]["model"])
 MODEL_URI = os.path.join(APP_PATH, cfg["app_data"]["model"])
 CONFID = cfg["app_data"]["min_confidence"]
 MAX_DETECT = cfg["app_data"]["max_detections"]
@@ -63,8 +68,14 @@ def load_img_db_cached():
 
 
 @st.cache_resource
+def load_previous_model_cached():
+    """Load and cache previous prediction model"""
+    return load_model(MODEL_URI_EFFNET)
+
+
+@st.cache_resource
 def load_model_cached():
-    """Load and cache prediction model"""
+    """Load and cache new detection model"""
     return YOLO(MODEL_URI)
 
 
@@ -195,7 +206,9 @@ def launch_api():
         st.session_state.img_db_hist = compute_data_hist()
     if "img_db_hist_caption" not in st.session_state:
         st.session_state.img_db_hist_caption = None
-    # load and cache model
+    # load and cache models
+    if "model_previous" not in st.session_state:
+        st.session_state.model_previous = load_previous_model_cached()
     if "model" not in st.session_state:
         st.session_state.model = load_model_cached()
     # raw data, for EDA
@@ -320,26 +333,37 @@ def launch_api():
     # INFERENCE
     # *************************************************************************
     st.write("## Test it")
-    st.write("Guidelines:")
-    st.write(
-        f"""
-        > ➡️ 🚧(upon selector) for **up to 6 simultaneous dogs** in following 10 breeds: *{(', ').join(breeds_read)}*  
-        > ⚠️ Only **JPG and PNG** files allowed -- max size: 200MB"""
-    )
-    st.write("#### 👇 **Upload your image** to predict dog(s) breed(s) 👇")
+    st.write("### Guidelines")
+    st.write(f"➡️ for **up to 20 simultaneous dogs** in following 10 breeds: *{(', ').join(breeds_read)}*")
+    st.write("🎛️ Update detection parameters for a **live interaction with model**")
+    st.write("⚠️ Only **JPG and PNG** files allowed -- max size: 200MB")
+    
+    st.write("### **Upload your image** to predict dog(s) breed(s) 👇")
 
     # user input
     st.session_state.image = st.file_uploader(
         "",
-        # "👇 Upload your dog image 👇",
         accept_multiple_files=False,
         type=["png", "jpg", "jpeg"],
     )
 
     if st.session_state.image is not None:
-        # adjust confidence and maximum detections
+        img = Image.open(st.session_state.image)
+
         col1, col2 = st.columns(2)
         with col1:
+            # display image
+            st.write("#### Input image")
+            input_caption = "User input picture"
+            st.image(
+                st.session_state.image,
+                caption=input_caption,
+                use_column_width=True
+            )
+
+        with col2:
+            # adjust confidence and maximum detections
+            st.write("#### Detection parameters")
             confidence_slider = st.slider(
                 "Confidence",
                 value=st.session_state.confidence,
@@ -349,7 +373,6 @@ def launch_api():
                 key="confidence_slider",
                 on_change=update_confid,
             )
-        with col2:
             max_detections_slider = st.slider(
                 "Maximum detections",
                 value=st.session_state.max_detections,
@@ -360,7 +383,22 @@ def launch_api():
                 on_change=update_max_detect,
             )
 
-        # display image
+        # FORMER MODEL classification
+        st.write("#### 1️⃣ EfficientNet classification")
+        # preprocess image
+        img_resized = img.resize((224, 224))
+        img_array = image.img_to_array(img_resized)
+        img_array = np.expand_dims(img_array, axis=0)
+        img_array = preprocess_input(img_array)
+        # predict dog breed
+        predictions = st.session_state.model_previous.predict(img_array)
+        predicted_class = np.argmax(predictions[0])
+        effnet_pred_breed = BREEDS_EFFNET[predicted_class]
+        confidence = predictions[0][predicted_class]
+        st.write(f"This picture represents :red[**{effnet_pred_breed}**] dog(s) with a confidence of {confidence :.0%}.")
+
+        # NEW MODEL detection
+        st.write("#### 2️⃣ YOLOv8 detection")
         img = Image.open(st.session_state.image)
         pred = st.session_state.model.predict(
             img,
