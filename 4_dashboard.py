@@ -336,7 +336,7 @@ def launch_api():
     st.write("### Guidelines")
     st.write(f"➡️ for **up to 20 simultaneous dogs** in following 10 breeds: *{(', ').join(breeds_read)}*")
     st.write("🎛️ Update detection parameters for a **live interaction with model**")
-    st.write("⚠️ Only **JPG and PNG** files allowed -- max size: 200MB")
+    st.write("⚠️ Only **JPG** files allowed -- max size: 200MB")
     
     st.write("### **Upload your image** to predict dog(s) breed(s) 👇")
 
@@ -344,7 +344,7 @@ def launch_api():
     st.session_state.image = st.file_uploader(
         "",
         accept_multiple_files=False,
-        type=["png", "jpg", "jpeg"],
+        type=["jpg", "jpeg"],
     )
 
     if st.session_state.image is not None:

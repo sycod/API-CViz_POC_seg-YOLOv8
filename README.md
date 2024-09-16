@@ -42,7 +42,7 @@ To predict again, upload another one and it will replace the previous prediction
 - **maximum detections** (up to 20 simultaneous detections)
 
 ➡️ For better results:
-- only JPG and PNG files are allowed
+- only JPG files are allowed
 - maximum image size: 200MB
 
 🚱 To avoid data leakage, use prior :
