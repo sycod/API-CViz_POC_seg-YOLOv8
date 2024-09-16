@@ -5,6 +5,7 @@ dill                    # Pickle substitute for big data sets
 keras                   # DL library
 keras-cv                # CViz library
 notebook                # all Jupyter notebook needs
+opencv-python-headless  # computer vision utils
 plotly                  # interactive plots (with JS)
 pylint                  # great linter
 pytest                  # unit tests
